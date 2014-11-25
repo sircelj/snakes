@@ -5,78 +5,71 @@ import random
 
 BLOCK = 20
 
-UP    = 0
-LEFT  = 1
-DOWN  = 2
-RIGHT = 3
-direction = [(0,-1), (-1,0), (0,1), (1,0)]
+EMPTY = 0
+BRICK  = 1
+MOUSE = 2
 
-def left(d):
-    return (d + 3) % 4
+def left(dx, dy):
+    return (-dy, dx)
 
-def right(d):
-    return (d + 1) % 4
+def right(dx, dy):
+    return (dy, -dx)
 
-class Wall():
-    def __init__(self, canvas, x, y):
-        self.x = BLOCK * x
-        self.y = BLOCK * y
-        self.widget = canvas.create_rectangle(self.x+2, self.y+2, self.x+BLOCK-2, self.y+BLOCK-2,
-                                              fill='brown', width=2)
-
-class Empty():
-    def __init__(self, canvas, x, y):
-        self.x = BLOCK * x
-        self.y = BLOCK * y
+def brick(canvas, x, y):
+    return canvas.create_rectangle(x*BLOCK, y*BLOCK, (x+1)*BLOCK, (y+1)*BLOCK,
+                                   fill='brown', width=2)
+def mouse(canvas, x, y):
+    canvas.create_oval(x*BLOCK+2, y*BLOCK+2, (x+1)*BLOCK-2, (y+1)*BLOCK-2,
+                       fill = 'gray')
 
 class Snake():
-    def __init__(self, name, canvas, field, x, y):
-        self.name = name
-        self.canvas = canvas
+    def __init__(self, field, color_head, color_tail, x, y, dx, dy):
         self.field = field
-        self.direction = random.randint(0,3)
+        self.dx = dx
+        self.dy = dy
         self.size = 3
         self.grow = 0
-        self.body = []
-        (u, v) = direction[self.direction]
-        for k in range(self.size, 0, -1):
-            self.add_cell(x - k * u, y - k * v)
+        self.color_head = color_head
+        self.color_tail = color_tail
+        self.coords = []
+        self.cells = []
+        # the tail
+        for k in range(self.size-1, 0, -1):
+            self.add_cell(x - k * self.dx, y - k * self.dy, head=False)
+        self.add_cell(x, y) # the head
 
-    def add_cell(self, x, y):
-        cell = self.canvas.create_oval(
+    def add_cell(self, x, y, head=True):
+        cell = self.field.canvas.create_oval(
             x*BLOCK, y*BLOCK, (x+1)*BLOCK, (y+1)*BLOCK,
-            fill = 'yellow')
-        self.body.insert(0, (x, y, cell))
-
+            fill = (self.color_head if head else self.color_tail))
+        self.coords.insert(0, (x, y))
+        self.cells.insert(0, cell)
+                        
     def move(self):
-        (u, v) = direction[self.direction]
-        x = self.body[0][0] + u
-        y = self.body[0][1] + v
+        (x,y) = self.coords[0]
+        x += self.dx
+        y += self.dy
         if self.field.is_empty(x,y):
             if self.grow > 0:
                 self.grow -= 1
                 self.add_cell(x, y)
             else:
                 # Reuse the last one
-                self.canvas.itemconfigure(self.body[0][2], fill='green')
-                cell = self.body.pop()[-1]
-                self.canvas.coords(cell, x*BLOCK, y*BLOCK, (x+1)*BLOCK, (y+1)*BLOCK)
-                self.canvas.itemconfigure(cell, fill='yellow')
-                self.body.insert(0, (x, y, cell))
+                self.coords.pop()
+                self.coords.insert(0, (x,y))
+                self.field.canvas.itemconfigure(self.cells[0], fill=self.color_tail)
+                cell = self.cells.pop()
+                self.field.canvas.coords(cell, x*BLOCK, y*BLOCK, (x+1)*BLOCK, (y+1)*BLOCK)
+                self.field.canvas.itemconfigure(cell, fill=self.color_head)
+                self.cells.insert(0, cell)
 
     def turn(self):
         if random.randint(0,10) < 2:
             if random.randint(0,1) == 1:
-                self.direction = left(self.direction)
+                (self.dx, self.dy) = left(self.dx, self.dy)
             else:
-                self.direction = right(self.direction)
+                (self.dx, self.dy) = right(self.dx, self.dy)
                 
-class Mouse():
-    def __init__(self, canvas, x, y):
-        self.widget = canvas.create_oval(
-            x*BLOCK+2, y*BLOCK+2, (x+1)*BLOCK-2, (y+1)*BLOCK-2,
-            fill = 'gray')
-
 class Field():
     """Playing field for the snakes."""
 
@@ -84,21 +77,36 @@ class Field():
         self.width = width
         self.height = height
         self.canvas = canvas
-        self.field = [[None] * height] * width
+        self.snakes = {}
+        self.mice = {}
+        self.bricks = []
+        self.refresh_matrix()
+        # The bricks
         for i in range(width):
-            self.field[i][0] = Wall(canvas, i, 0)
-            self.field[i][height-1] = Wall(canvas, i, height-1)
+            self.bricks.append(brick(canvas, i, 0))
+            self.bricks.append(brick(canvas, i, height-1))
         for j in range(1, height-1):
-            self.field[0][j] = Wall(canvas, 0, j)
-            self.field[width-1][j] = Wall(canvas, width-1, j)
-        for i in range(1, width-1):
-            for j in range(1, height-1):
-                self.field[i][j] = Empty(canvas, i, j)
+            self.bricks.append(brick(canvas, 0, j))
+            self.bricks.append(brick(canvas, width-1, j))
 
-    def is_empty(self, x, y):
-        return (0 <= x < self.width and
-                0 < y < self.height and
-                isinstance(self.field[x][y], Empty))
+    def refresh_matrix(self):
+        self.matrix = [[EMPTY for j in range(self.height)] for i in range(self.width)]
+        for i in range(self.width):
+            self.matrix[i][0] = BRICK
+            self.matrix[i][self.height-1] = BRICK
+        for j in range(1, self.height-1):
+            self.matrix[0][j] = BRICK
+            self.matrix[self.width-1][j] = BRICK
+        for s in self.snakes.values():
+            for (i,j) in s.coords():
+                self.matrix[i][j] = s.id
+        for (i,j) in self.mice:
+            self.matrix[i][j] = MOUSE
+
+    def is_empty(self, i, j):
+        return (0 < i < self.width-1 and
+                0 < j < self.height-1 and
+                self.matrix[i][j] == EMPTY)
                 
     def find_empty(self):
         for i in range(5):
@@ -111,7 +119,13 @@ class Field():
     def new_mouse(self):
         (a,b) = self.find_empty()
         if a and b:
-            self.field[a][b] = Mouse(self.canvas, a, b)
+            self.mice[(a,b)] = mouse(self.canvas, a, b)
+
+    def eat_mouse(self, (a, b)):
+        m = self.mice.get((a,b))
+        if m:
+            self.canvas.delete(m)
+            del self.mice[(a,b)]
 
 class SnakeGame():
     def __init__(self, master, width=50, height=30):
@@ -121,7 +135,7 @@ class SnakeGame():
         self.canvas = Canvas(master, width=width*BLOCK, height=height*BLOCK)
         self.canvas.grid(row=0, column=1)
         self.field = Field(self.canvas, width, height)
-        self.snakes = [Snake('Test', self.canvas, self.field, width//2, height//2)]
+        self.snakes = [Snake(self.field, 'yellow', 'red', width//2, height//2, -1, 0)]
         self.t = 0
         self.tick()
 
@@ -133,7 +147,8 @@ class SnakeGame():
                 s.grow = 1
             s.turn()
             s.move()
-        self.t += 1        
+        self.field.refresh_matrix()
+        self.t += 1
         self.canvas.after(100, self.tick)
         
 # Main program
