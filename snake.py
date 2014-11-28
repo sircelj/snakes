@@ -1,37 +1,58 @@
-#!/usr/bin/python
+# -*- encoding: utf-8 -*-
 
 import random
 
-BLOCK = 20
+# V tej datoteki so definicije razredov Snake in Field ter nekaj pomožnih konstant in
+# funkcij.
 
-# Helper functions
+# Igralno polje sestoji iz mreze kvadratkov (blokov)
+WIDTH = 50  # sirina polja (stevilo blokov)
+HEIGHT = 30 # visina polja
+BLOCK = 20  # velikost enega bloka v tockah na zaslonu
+
+# Pomozne funkcije
 
 def brick(canvas, x, y):
-    """Create a brick widget (to be placed on the edge of the field)."""
+    """Ustvari graficni element, ki predstavlja opeko (na robu polja)."""
     return canvas.create_rectangle(x*BLOCK, y*BLOCK, (x+1)*BLOCK, (y+1)*BLOCK,
                                    fill='brown', width=2)
 def mouse(canvas, x, y):
-    """Create a mouse widget."""
+    """Ustvari graficni element, ki predstavlja misko."""
     return canvas.create_oval(x*BLOCK+2, y*BLOCK+2, (x+1)*BLOCK-2, (y+1)*BLOCK-2,
                               fill = 'gray')
 
+# Razredi
+
 class Snake():
+    """Razred, ki predstavlja kaco.
+       Vse kace v igrici so podrazredi tega razreda. Objekt razreda Snake
+       ima naslednje atribute:
+
+       field       --  objekt razreda Field, v katerem je kaca
+       (dx, dy)    --  smerni vektor premikanja, eden od (-1,0), (1,0), (0,-1), (0,1)
+       grow        --  za koliko clenkov mora kaca zrasti
+       color_head  --  barva glave
+       color_tail  --  barva repa
+       coords      --  seznam koordinat clenkov kace (glava je coords[0])
+       cells       --  seznam graficnih elementov, ki predstavljajo kaco
+    """
+
     def __init__(self, field, color_head, color_tail, x, y, dx, dy):
         self.field = field
         self.dx = dx
         self.dy = dy
-        self.size = 3
         self.grow = 0
         self.color_head = color_head
         self.color_tail = color_tail
         self.coords = []
         self.cells = []
         # the tail
-        for k in range(self.size-1, 0, -1):
+        for k in range(2, 0, -1):
             self.add_cell(x - k * self.dx, y - k * self.dy)
         self.add_cell(x, y) # the head
 
     def add_cell(self, x, y):
+        """Dodaj kaci novo celico."""
         cell = self.field.canvas.create_oval(
             x*BLOCK, y*BLOCK, (x+1)*BLOCK, (y+1)*BLOCK, fill = self.color_head)
         if len(self.cells) > 0:
@@ -39,15 +60,19 @@ class Snake():
         self.coords.insert(0, (x, y))
         self.cells.insert(0, cell)
                         
+
     def turn_left(self):
-        """Rotate a vector by pi/2 anticlockwise."""
+        """Obrni kaco v levo."""
         (self.dx, self.dy) = (-self.dy, self.dx)
 
     def turn_right(self):
-        """Rotate a vector by pi/2 clockwise."""
+        """Obrni kaco v desno."""
         (self.dx, self.dy) = (self.dy, -self.dx)
             
     def move(self):
+        """Premakni kaco v smer, v katero je obrnjena.
+           Ce je na polju, kamor se premaknemo, miska, jo pojemo.
+           Ce je polje zasedeno z drugo kaco ali opeko, se ne zgodi nic."""
         (x,y) = self.coords[0]
         x += self.dx
         y += self.dy
@@ -69,11 +94,21 @@ class Snake():
                 self.cells.insert(0, cell)
 
     def turn(self):
+        """Po potrebi obrni kaco.
+           Ta funkcija ne dela nicesar in jo je treba redefinirati v podrazredu,
+           ki predstavlja kaco, glej prilozene primere."""
         pass
 
                 
 class Field():
-    """Playing field for the snakes."""
+    """Igralno polje, po katerem se gibljejo kace.
+       Atributi:
+
+       width  -- sirina polja
+       height -- visina polja
+       snakes -- seznam kac, ki so v polju
+       mice   -- slovar, ki slika koordinate misk v id-je pripadajocih graficnih objektov
+    """
 
     def __init__(self, canvas, width, height):
         self.width = width
@@ -91,25 +126,29 @@ class Field():
             self.bricks.append(brick(canvas, width-1, j))
 
     def add_snake(self, s):
+        """Dodaj novo kaco v polje."""
         s.id = len(self.snakes)
         self.snakes.append(s)
     
-    def is_mouse(self, i, j):
-        return (0 < i < self.width-1 and
-                0 < j < self.height-1 and
-                (i,j) in self.mice)
+    def is_mouse(self, x, y):
+        """Ali je na lokaciji (x,y) miska?"""
+        return (0 < x < self.width-1 and
+                0 < y < self.height-1 and
+                (x,y) in self.mice)
     
-    def is_empty(self, i, j):
-        if (0 < i < self.width-1 and
-            0 < j < self.height-1 and
-            (i,j) not in self.mice):
+    def is_empty(self, x, y):
+        """Ali je polje (x,y) prazno?"""
+        if (0 < x < self.width-1 and
+            0 < y < self.height-1 and
+            (x,y) not in self.mice):
             for s in self.snakes:
-                if (i,j) in s.coords: return False
+                if (x,y) in s.coords: return False
             return True
         else:
             return False
                             
     def find_empty(self):
+        """Nakljucno izberi prazno polje, poskusi najvec petkrat."""
         for i in range(5):
             x = random.randint(1, self.width-2)
             y = random.randint(1, self.height-2)
@@ -118,11 +157,13 @@ class Field():
         return (None, None)
 
     def new_mouse(self):
+        """Dodaj misko na nakljucno izbrano polje."""
         (x,y) = self.find_empty()
         if x and y:
             self.mice[(x,y)] = mouse(self.canvas, x, y)
 
     def remove_mouse(self, x, y):
+        """Odstrani misko na lokaciji (x,y)."""
         m = self.mice.get((x,y))
         if m:
             self.canvas.delete(m)
