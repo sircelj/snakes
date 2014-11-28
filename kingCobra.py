@@ -26,9 +26,38 @@ class KingCobra(Snake):
            * spisek koordinat vseh misk je self.field.mice.keys()
            * spisek vseh kac je self.field.snakes
         """
-           
-        if random.randint(0,10) < 5:
+
+
+        x = self.coords[0][0]
+        y = self.coords[0][1]
+
+#        print (self.dx)
+#        print (self.dy)
+
+        if random.randint(0,10) < 2:
             if random.randint(0,1) == 1:
                 self.turn_left()
+                return
             else:
                 self.turn_right()
+                return
+
+        if x < y:
+            if self.dx == 0 and self.dy == 1:
+                self.turn_right()
+            if self.dx == 0 and self.dy == -1:
+                self.turn_left()
+            if self.dx == 1 and self.dy == 0:
+                pass
+            if self.dx == -1 and self.dy == 0:
+                self.turn_right()
+        else:
+            if self.dx == 0 and self.dy == 1:
+                self.turn_left()
+            if self.dx == 0 and self.dy == -1:
+                self.turn_right()
+            if self.dx == 1 and self.dy == 0:
+                self.turn_right()
+            if self.dx == -1 and self.dy == 0:
+                pass
+                
