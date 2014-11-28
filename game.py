@@ -13,6 +13,7 @@ import random
 from bolivianAnaconda import BolivianAnaconda
 from congoWaterCobra import CongoWaterCobra
 from dwarfBoa import DwarfBoa
+from kingCobra import KingCobra
 
 # Nato v spisek SNAKES dodate razred, ki predstavlja vaso kaco
 
@@ -20,6 +21,7 @@ SNAKES = [
     BolivianAnaconda,
     CongoWaterCobra,
     DwarfBoa,
+    KingCobra,
 ]
 
 # Od tu naprej se ni treba nicesar dotikati
