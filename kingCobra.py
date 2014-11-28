@@ -2,8 +2,8 @@ import random
 from snake import *
 
 # Barva glave in repa
-COLOR_HEAD = 'red'
-COLOR_TAIL = 'orange'
+COLOR_HEAD = '#000000'
+COLOR_TAIL = '#B80000'
 
 class KingCobra(Snake):
     def __init__(self, field, x, y, dx, dy):
