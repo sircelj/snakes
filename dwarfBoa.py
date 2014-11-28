@@ -14,6 +14,10 @@ class DwarfBoa(Snake):
             color_tail = COLOR_TAIL,
             x = x, y = y, dx = dx, dy = dy)
         # V konstruktor lahko dodate se kaksne atribute
+        dx = 0
+        dy = x%2
+        dy = 1 if dy == 1 else -1
+        print(x, dy)
 
     def turn(self):
         """Igrica poklice metodo turn vsakic, preden premakne kaco. Kaca naj se tu odloci, ali se
@@ -26,9 +30,26 @@ class DwarfBoa(Snake):
            * spisek koordinat vseh misk je self.field.mice.keys()
            * spisek vseh kac je self.field.snakes
         """
-           
-        if random.randint(0,10) < 5:
-            if random.randint(0,1) == 1:
-                self.turn_left()
+        xH = self.coords[0][0]
+        yH = self.coords[0][1]
+        dx = self.dx
+        dy = self.dy
+        print(xH,yH,dx,dy)
+        if dx == 0:
+            if xH%2 == 1:
+                self.dy = 1
             else:
+                self.dy = -1
+
+            if yH == 28:
                 self.turn_right()
+                print(self.dx)
+            if yH == 2:
+                self.turn_left()
+                print(self.dx)
+        else:
+            if yH == 28:
+                self.turn_right()
+            elif yH == 2:
+                self.turn_left()
+    
