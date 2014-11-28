@@ -99,7 +99,7 @@ Igrici dodajte svojo kačo:
 
 3. Popravite `blackAdder.py` in jo ne pozabite dodati v git repozitorij z
 
-       git add blackAdder.py
+          git add blackAdder.py
 
 4. Svojo kačo dodajte v spisek kač `SNAKES` v datoteki `game.py`.
 
