@@ -12,14 +12,9 @@ class CongoWaterCobra(Snake):
             color_tail = COLOR_TAIL,
             x = x, y = y, dx = dx, dy = dy)
         self.i = 0
-
+        
     def turn(self):
+        self.i -= 1
         if self.i <= 0:
+            self.turn_left()
             self.i = 10
-            if random.randint(0,1) == 0:
-                self.turn_left()
-            else:
-                self.turn_right()
-        else:
-            self.i -= 1
-
