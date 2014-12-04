@@ -17,6 +17,8 @@ from kingCobra import KingCobra
 
 # Nato v spisek SNAKES dodate razred, ki predstavlja vaso kaco
 
+# Dodal sem nov komentar, ki ga bom hitro zbrisal
+
 SNAKES = [
     BolivianAnaconda,
     CongoWaterCobra,
